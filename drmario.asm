@@ -508,6 +508,12 @@ game_loop:
     
     jal handle_input
     
+    addi $v0, $zero, 32
+    addi $a0, $zero, 166
+    syscall
+    
+    jal draw_capsule
+    
     j game_loop
 
 game_over:
@@ -537,8 +543,8 @@ handle_input:
     lw $t2, 4($t0)
     
     beq $t2, 0x71, quit_game
-#    beq $t2, 0x10, move_left
-#    beq $t2, 0x13, move_right
+    beq $t2, 0x61, move_left
+#    beq $t2, 0x64, move_right
 #    beq $t2, 0x73, move_down
 #    beq $t2, 0x77, rotate_right 
     j clear_key
@@ -549,9 +555,9 @@ quit_game:
     li $t0, 1
     sw $t0, game_over_flag
     j clear_key
-#move_left:
-#    jal move_capsule_left
-#    j clear_key
+move_left:
+    jal move_capsule_left
+    j clear_key
 #move_right:
 #    jal move_capsule_right
 #    j clear_key
@@ -566,6 +572,7 @@ clear_key:
     lw $t0, ADDR_KBRD
     sb $zero, 0($t0)
     sb $zero, 4($t0)
+    lw $ra, 0($sp)
     jr $ra
 
 ##############################################################################
@@ -642,7 +649,7 @@ place_loop:
     mfhi $t4
     move $a0, $t3
     move $a1, $t4
-    jal check_cell_empty
+    jal check_collision
     bnez $v0, place_loop  # If occupied, try again
     
     la $t3, JAR_GRID
@@ -725,37 +732,27 @@ place_loop_capsule:
     sw $t1, capsule_color_right
     
     # Set initial position: top-middle of the grid
-    li $t2, 0                 
-    li $t3, 1                 
+    li $t2, 0                         
     li $t4, 3                 
-    li $t5, 3
+    move $a0, $t2
+    move $a1, $t4
+    jal check_collision
+    bnez $v0, game_over
     
+    li $t3, 0
+    li $t5, 4 
+    move $a0, $t3
+    move $a1, $t5
+    jal check_collision
+    bnez $v0, game_over
+
     sw $t2, active_capsule_row_left
     sw $t3, active_capsule_row_right
     sw $t4, active_capsule_col_left
     sw $t5, active_capsule_col_right
 
-    li $t6, 1                 # Orientation: 0 = horizontal, 1 = vertical
+    li $t6, 0                 # Orientation: 0 = horizontal, 1 = vertical
     sw $t6, active_capsule_orientation
-    
-    # Calculate grid indices for left and right halves
-    mul $t7, $t2, 8           # $t6 = row * number_of_columns (8)
-    add $t7, $t7, $t4         # $t7 = index for left half
-    mul $t8, $t3, 8
-    add $t8, $t8, $t5         # $t8 = index for right half
-    
-    # Load base address of JAR_GRID
-    la $t9, JAR_GRID
-    
-    # Check if left spawn position is empty
-    add $s0, $t9, $t7         # Address of left spawn cell
-    lb $s1, 0($s0)            # Load value at left spawn cell
-    bnez $s1, game_over       # If not zero, cell is occupied
-
-    # Check if right spawn position is empty
-    add $s0, $t9, $t8         # Address of right spawn cell
-    lb $s1, 0($s0)            # Load value at right spawn cell
-    bnez $s1, game_over       # If not zero, cell is occupied
 
     # Place the capsule in the grid
     jal place_capsule_in_grid
@@ -957,7 +954,7 @@ draw_end_capsule:
     jr $ra                            # Return to caller    
 
 ##############################################################################
-# Function: check_collsion
+# Function: check_collision
 # Checks if the given position is valid (within bounds and unoccupied)
 # Inputs:
 #   $a0 - Row of the cell
@@ -965,7 +962,7 @@ draw_end_capsule:
 # Outputs:
 #   $v0 - 0 if empty (no collision), 1 if occupied (collision)
 ##############################################################################
-check_cell_empty:
+check_collision:
     # Save callee-saved registers if necessary
     addi $sp, $sp, -8
     sw $s0, 0($sp)
@@ -981,16 +978,16 @@ check_cell_empty:
     bgt $s1, 7, cell_occupied   # If column > 7
 
     # Calculate grid index
-    mul $t2, $s0, 8               # t2 = row * 8
-    add $t2, $t2, $s1             # t2 = index
+    mul $t7, $s0, 8               # t7 = row * 8
+    add $t7, $t7, $s1             # t7 = index
 
     # Load base address of JAR_GRID
-    la $t3, JAR_GRID
+    la $t8, JAR_GRID
 
     # Check if grid position is occupied
-    add $t3, $t3, $t2             # Address of grid cell
-    lb $t4, 0($t3)                # Load value at grid cell
-    bnez $t4, cell_occupied       # If not zero, occupied
+    add $t8, $t8, $t7             # Address of grid cell
+    lb $t6, 0($t8)                # Load value at grid cell
+    bnez $t6, cell_occupied       # If not zero, occupied
 
     # Cell is empty
     li $v0, 0                     # Return value 0 (no collision)
@@ -1006,4 +1003,54 @@ cell_occupied:
     lw $s0, 0($sp)
     lw $s1, 4($sp)
     addi $sp, $sp, 8
+    jr $ra
+
+##############################################################################
+# Function: move_capsule_left
+# Attempts to move the active capsule one column to the left
+##############################################################################
+move_capsule_left:
+    addi $sp, $sp, -8
+    sw $ra, 4($sp)
+    
+    # Load current capsule positions
+    lw $t0, active_capsule_row_left     # Row of left half
+    lw $t1, active_capsule_col_left     # Column of left half
+    lw $t2, active_capsule_row_right    # Row of right half
+    lw $t3, active_capsule_col_right    # Column of right half
+
+    # Calculate new positions
+    addi $t4, $t1, -1                   # New column for left half
+    addi $t5, $t3, -1                   # New column for right half
+
+    move $a0, $t0
+    move $a1, $t4
+    jal check_collision
+    bnez $v0, no_move
+    
+    la $t8, JAR_GRID
+    mul $t7, $t0, 8
+    add $t8, $t8, $t1
+    add $t8, $t8, $t7             
+    sb $zero, 0($t8)    
+    
+    sw $t0, active_capsule_row_left     # Row of left half
+    sw $t4, active_capsule_col_left     # Column of left half
+    sw $t2, active_capsule_row_right    # Row of right half
+    sw $t5, active_capsule_col_right    # Column of right half
+    
+    j exit_move_left
+    
+no_move:
+    sw $t0, active_capsule_row_left     # Row of left half
+    sw $t1, active_capsule_col_left     # Column of left half
+    sw $t2, active_capsule_row_right    # Row of right half
+    sw $t3, active_capsule_col_right    # Column of right half
+
+exit_move_left:
+    # Place the capsule in the grid
+    jal place_capsule_in_grid
+    
+    lw $ra, 4($sp)
+    addi $sp, $sp, 8          # Return to caller
     jr $ra
