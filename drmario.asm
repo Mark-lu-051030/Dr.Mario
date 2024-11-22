@@ -420,8 +420,28 @@ SPRITE_RPR:
     .word 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0x000001   
     .word 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0x000001   
     .word 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0x000001, 0x000001   
-    .word 0x000001, 0x000001, 0x000001, 0x000001, 0x000001, 0x000001, 0x000001, 0x000001 
-      
+    .word 0x000001, 0x000001, 0x000001, 0x000001, 0x000001, 0x000001, 0x000001, 0x000001
+BLACK:    
+    .word 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000
+    .word 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000
+    .word 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000
+    .word 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000
+    .word 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000
+    .word 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000
+    .word 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000
+    .word 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000 
+SPRITE_PAUSE:
+    .word 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 0, 0, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0
+    .word 0xFFFFFF, 0xFFFFFF, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 0, 0, 0xFFFFFF, 0xFFFFFF, 0, 0xFFFFFF, 0xFFFFFF, 0, 0, 0xFFFFFF, 0xFFFFFF, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 0, 0xFFFFFF, 0xFFFFFF, 0, 0, 0xFFFFFF, 0xFFFFFF, 0, 0, 0xFFFFFF, 0xFFFFFF, 0, 0, 0, 0, 0, 0
+    .word 0xFFFFFF, 0xFFFFFF, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 0, 0xFFFFFF, 0xFFFFFF, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 0, 0xFFFFFF, 0xFFFFFF, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 0, 0xFFFFFF, 0xFFFFFF, 0, 0, 0, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 0, 0, 0, 0, 0, 0
+    .word 0xFFFFFF, 0xFFFFFF, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 0, 0xFFFFFF, 0xFFFFFF, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 0, 0xFFFFFF, 0xFFFFFF, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 0, 0, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0, 0, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0, 0
+    .word 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0, 0, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0, 0xFFFFFF, 0xFFFFFF, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 0, 0, 0, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 0, 0xFFFFFF, 0xFFFFFF, 0, 0, 0, 0, 0, 0
+    .word 0xFFFFFF, 0xFFFFFF, 0, 0, 0, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 0, 0xFFFFFF, 0xFFFFFF, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 0, 0xFFFFFF, 0xFFFFFF, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 0, 0xFFFFFF, 0xFFFFFF, 0, 0, 0, 0, 0, 0
+    .word 0xFFFFFF, 0xFFFFFF, 0, 0, 0, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 0, 0, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0, 0, 0, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0, 0, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0xFFFFFF, 0
+    .word 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+SPRITE_OR:                  .word 1280
+SPRITE_CB:                  .word 1280
+
 # JAR MAP
 JAR_LOCATION:
     .word 0x1001c180, 0x1001c1a0, 0x1001c1c0, 0x1001c1e0, 0x1001c200, 0x1001c220, 0x1001c240, 0x1001c260
@@ -442,6 +462,7 @@ JAR_LOCATION:
     .word 0x1003a180, 0x1003a1a0, 0x1003a1c0, 0x1003a1e0, 0x1003a200, 0x1003a220, 0x1003a240, 0x1003a260
 JAR_GRID:	.space	128
 # The address of the keyboard. Don't forget to connect it!
+
 ADDR_KBRD:
     .word 0xffff0000
 ##############################################################################
@@ -456,6 +477,7 @@ active_capsule_orientation:  .word 0   # 0 = horizontal, 1 = vertical
 
 # Game over flag
 game_over_flag:              .word 0   # 0 = game continues, 1 = game over
+paused_flag: 	            .word 0   # 0 = game continues, 1 = game paused
 
 # Capsule colors
 capsule_color_left:       .word 0
@@ -505,12 +527,10 @@ Exit:
 game_loop:
     lw $t7, game_over_flag
     bnez $t7, game_over
-    
+    lw $t8, paused_flag
+    bnez $t8, pause_handler
+
     jal handle_input
-    
-    addi $v0, $zero, 32
-    addi $a0, $zero, 166
-    syscall
     
     jal draw_capsule
     
@@ -531,24 +551,42 @@ game_over:
 handle_input:
     addi $sp, $sp, -4
     sw $ra, 0($sp)
-    
+
+    lw $t0, paused_flag
+    bnez $t0, handle_pause_only
+
     addi $v0, $zero, 32
     addi $a0, $zero, 16
     syscall
     
-    lw $t0, ADDR_KBRD      # Load keyboard address into $t0
-    lb $t1, 0($t0)         # Load the input character
-
+    lw $t0, ADDR_KBRD      
+    lb $t1, 0($t0)         
     beqz $t1, no_input
     lw $t2, 4($t0)
     
-    beq $t2, 0x71, quit_game
-    beq $t2, 0x61, move_left
-    beq $t2, 0x64, move_right
-    beq $t2, 0x73, move_down
-    # beq $t2, 0x77, rotate_right 
+    beq $t2, 0x71, quit_game    # q
+    beq $t2, 0x61, move_left    # a
+    beq $t2, 0x64, move_right   # d
+    beq $t2, 0x73, move_down    # s
+    beq $t2, 0x70, toggle_pause # p
     j clear_key
+
+handle_pause_only:
+    # 暂停时只检查 p 键
+    lw $t0, ADDR_KBRD
+    lb $t1, 0($t0)
+    beqz $t1, no_input
+    lw $t2, 4($t0)
     
+    beq $t2, 0x70, toggle_pause
+    j clear_key
+
+toggle_pause:
+    lw $t0, paused_flag
+    xori $t0, $t0, 1        # 切换暂停状态(0->1 或 1->0)
+    sw $t0, paused_flag
+    j clear_key
+
 no_input:
     lw $ra, 0($sp)
     addi $sp, $sp, 4
@@ -685,7 +723,7 @@ exit_place_viruses:
     jr $ra
 
 ##############################################################################
-# Function: draw viruses(t9:grid size, a0:base address) 
+# Function: draw viruses(a0:base address) 
 # 
 ##############################################################################
 draw_viruses:
@@ -695,6 +733,11 @@ draw_viruses:
     sw $ra, 8($sp)
     
     move $s0, $a0
+    # Load color from JAR_GRID
+    la $t4, JAR_GRID            # Load base address of JAR_GRID
+    add $t2, $s0, $zero         # Offset = index *1 (since each cell is 1 byte)
+    add $t2, $t4, $t2           # Address of JAR_GRID[index]
+    lb $t0, 0($t2)              # Load color into $t0
     
     li $a2, 8
     li $a3, 8
@@ -702,6 +745,7 @@ draw_viruses:
     beq $t0, 1, load_sprite_yv
     beq $t0, 2, load_sprite_bv
     beq $t0, 3, load_sprite_rv
+    beq $t0, 0, load_black
 
 load_sprite_yv:
     la $a1, SPRITE_YV
@@ -711,6 +755,10 @@ load_sprite_bv:
     j proceed_draw
 load_sprite_rv:
     la $a1, SPRITE_RV
+    j proceed_draw
+load_black:
+    la $a1, BLACK
+    j proceed_draw
 proceed_draw: 
     la $t4, JAR_LOCATION     # Base address of JAR_LOCATION
     mul $t2, $s0, 4          # Offset = index * 4 (word size)
@@ -1135,6 +1183,16 @@ proceed_move:
     # Remove capsule from current grid positions
     jal remove_capsule_in_grid
 
+    # clear old position piexls
+    mul $t1, $s1, 8
+    add $t1, $s2, $t1
+    add $a0, $zero, $t1
+    jal draw_viruses
+    mul $t1, $s3, 8
+    add $t1, $s4, $t1
+    add $a0, $zero, $t1
+    jal draw_viruses
+
     # Update capsule's column positions
     sw $s6, active_capsule_col_left      # New column of left half
     sw $s7, active_capsule_col_right     # New column of right half
@@ -1172,6 +1230,16 @@ move_down_proc:
 proceed_move_down:
     # Remove capsule from current grid positions
     jal remove_capsule_in_grid
+
+    # clear old position piexls
+    mul $t1, $s1, 8
+    add $t1, $s2, $t1
+    add $a0, $zero, $t1
+    jal draw_viruses
+    mul $t1, $s3, 8
+    add $t1, $s4, $t1
+    add $a0, $zero, $t1
+    jal draw_viruses
 
     # Update capsule's row positions
     sw $s6, active_capsule_row_left      # New row of left half
@@ -1225,3 +1293,55 @@ fix_capsule_status:
     # Spawn a new capsule
     jal place_capsule
     j end_move_capsule                   # Return to caller
+
+##############################################################################
+# Function: pause_handler
+##############################################################################
+pause_handler:
+        # Display the pause screen
+        jal draw_pause_screen
+        
+    wait_resume:
+        # Wait until the player resumes the game by pressing 'p'
+        jal handle_input              # Handle input to check for 'p' again
+        
+        # Check if the game is still paused
+        lw $t0, paused_flag
+        bnez $t0, wait_resume        # If still paused, continue waiting
+        
+        # Remove the pause screen
+        jal remove_pause_screen
+        
+        j game_loop
+
+##############################################################################
+# Function: draw_pause_screen
+##############################################################################
+draw_pause_screen:
+    addi $sp, $sp, -8
+    sw $ra, 4($sp)
+    sw $s0, 0($sp)
+
+
+
+    lw $s0, 0($sp)
+    lw $ra, 4($sp)
+    addi $sp, $sp, 8
+    jr $ra
+
+##############################################################################
+# Function: remove_pause_screen
+##############################################################################
+remove_pause_screen:
+    addi $sp, $sp, -8
+    sw $ra, 4($sp)
+    sw $s0, 0($sp)
+
+    lw $s0, 0($sp)
+    lw $ra, 4($sp)
+    addi $sp, $sp, 8
+    
+    jr $ra    
+
+
+#TODO -draw and remove pause screen, -do rotate capusle, -clear line, - music at when game done, and bgm whole time, gravity, gravity increase, end screen, Draw Dr. Mario and the viruses on the side panels, mplement additional shapes and colours for the capsules.
