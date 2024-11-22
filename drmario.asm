@@ -544,35 +544,48 @@ handle_input:
     
     beq $t2, 0x71, quit_game
     beq $t2, 0x61, move_left
-#    beq $t2, 0x64, move_right
-#    beq $t2, 0x73, move_down
-#    beq $t2, 0x77, rotate_right 
+    beq $t2, 0x64, move_right
+    beq $t2, 0x73, move_down
+    # beq $t2, 0x77, rotate_right 
     j clear_key
     
 no_input:
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
     jr $ra
+
 quit_game:
     li $t0, 1
     sw $t0, game_over_flag
     j clear_key
+
 move_left:
-    jal move_capsule_left
+    li $a0, 4
+    jal move_capsule
     j clear_key
-#move_right:
-#    jal move_capsule_right
-#    j clear_key
-#move_down:
-#    jal move_capsule_down
-#    j clear_key
+
+move_right:
+    li $a0, 6
+    jal move_capsule
+    j clear_key
+
+move_down:
+    li $a0, 2
+    jal move_capsule
+    j clear_key
+
 #rotate_right:
-#    jal rotate_capsule_func
+#    li $a0, 8
+#    jal move_capsule
 #    j clear_key
+
 clear_key:
     # Clear the key pressed to avoid repeated inputs
     lw $t0, ADDR_KBRD
     sb $zero, 0($t0)
     sb $zero, 4($t0)
     lw $ra, 0($sp)
+    addi $sp, $sp, 4
     jr $ra
 
 ##############################################################################
@@ -758,7 +771,8 @@ place_loop_capsule:
     jal place_capsule_in_grid
     
     lw $ra, 0($sp)
-    addi $sp, $sp, 4          # Return to caller 
+    addi $sp, $sp, 4          # Return to caller
+    jr $ra 
     
 ##############################################################################
 # Function: place_capsule_in_grid
@@ -788,6 +802,35 @@ place_capsule_in_grid:
     # Place color for right half
     add $t9, $t8, $t7                   # Address for right half
     sb $t5, 0($t9)                      # Store color
+
+    jr $ra                              # Return to caller
+
+##############################################################################
+# Function: remove_capsule_in_grid
+##############################################################################
+remove_capsule_in_grid:
+    # Load capsule position and colors
+    lw $t0, active_capsule_row_left     # $t0 = left row
+    lw $t1, active_capsule_row_right    
+    lw $t2, active_capsule_col_left     # $t1 = left column
+    lw $t3, active_capsule_col_right    # $t2 = right column
+
+    # Calculate grid indices
+    mul $t6, $t0, 8                     # $t5 = row * num_columns (8)
+    add $t6, $t6, $t2                   # $t6 = index for left half
+    mul $t7, $t1, 8
+    add $t7, $t7, $t3                   # $t7 = index for right half
+
+    # Load base address of JAR_GRID
+    la $t8, JAR_GRID
+
+    # Place color for left half
+    add $t9, $t8, $t6                   # Address for left half
+    sb $zero, 0($t9)                      # Store color
+
+    # Place color for right half
+    add $t9, $t8, $t7                   # Address for right half
+    sb $zero, 0($t9)                      # Store color
 
     jr $ra                              # Return to caller
 
@@ -1006,51 +1049,179 @@ cell_occupied:
     jr $ra
 
 ##############################################################################
-# Function: move_capsule_left
-# Attempts to move the active capsule one column to the left
+# Function: move_capsule
+# Attempts to move the active capsule
 ##############################################################################
-move_capsule_left:
-    addi $sp, $sp, -8
-    sw $ra, 4($sp)
-    
+move_capsule:
+    addi $sp, $sp, -24
+    sw $ra, 0($sp)
+    sw $s0, 4($sp)              # Save $s0
+    sw $s1, 8($sp)              # Save $s1
+    sw $s2, 12($sp)              # Save $s2
+    sw $s3, 16($sp)              # Save $s3
+    sw $s4, 20($sp)              # Save $s4
+
+    move $s0, $a0               # Movement Direction Identifier
+
     # Load current capsule positions
-    lw $t0, active_capsule_row_left     # Row of left half
-    lw $t1, active_capsule_col_left     # Column of left half
-    lw $t2, active_capsule_row_right    # Row of right half
-    lw $t3, active_capsule_col_right    # Column of right half
+    lw $s1, active_capsule_row_left     # Row of left half
+    lw $s2, active_capsule_col_left     # Column of left half
+    lw $s3, active_capsule_row_right    # Row of right half
+    lw $s4, active_capsule_col_right    # Column of right half
+    lw $s5, active_capsule_orientation  # Orientation
 
-    # Calculate new positions
-    addi $t4, $t1, -1                   # New column for left half
-    addi $t5, $t3, -1                   # New column for right half
+    beq $s0, 4, move_lr_proc           
+    beq $s0, 6, move_lr_proc          
+    beq $s0, 2, move_down_proc           # MOVE_DOWN
+    # beq $s0, 8, rotate_proc              # ROTATE
+    j end_move_capsule                    # Invalid movement
 
-    move $a0, $t0
-    move $a1, $t4
-    jal check_collision
-    bnez $v0, no_move
-    
-    la $t8, JAR_GRID
-    mul $t7, $t0, 8
-    add $t8, $t8, $t1
-    add $t8, $t8, $t7             
-    sb $zero, 0($t8)    
-    
-    sw $t0, active_capsule_row_left     # Row of left half
-    sw $t4, active_capsule_col_left     # Column of left half
-    sw $t2, active_capsule_row_right    # Row of right half
-    sw $t5, active_capsule_col_right    # Column of right half
-    
-    j exit_move_left
-    
-no_move:
-    sw $t0, active_capsule_row_left     # Row of left half
-    sw $t1, active_capsule_col_left     # Column of left half
-    sw $t2, active_capsule_row_right    # Row of right half
-    sw $t3, active_capsule_col_right    # Column of right half
+##############################################################################
+# Subroutine: move_lr_proc
+##############################################################################
+move_lr_proc:
+    beq $s0, 4, move_l_proc           
+    beq $s0, 6, move_r_proc
 
-exit_move_left:
-    # Place the capsule in the grid
+move_l_proc:
+    addi $s6, $s2, -1            # New column for left half
+    addi $s7, $s4, -1            # New column for right half
+    j check_pl
+
+move_r_proc:
+    addi $s6, $s2, 1            # New column for left half
+    addi $s7, $s4, 1            # New column for right half
+    j check_pr
+
+check_pl:
+    # Check collision for new positions
+    move $a0, $s1                 # Row of left half
+    move $a1, $s6                 # New column of left half
+    jal check_collision            # Check collision
+    bnez $v0, skip_move_capsule            # Collision detected; skip move
+    mul $t3, $s1, 8                     
+    add $t3, $t3, $s2                   
+    # Load base address of JAR_GRID
+    la $t4, JAR_GRID
+    add $t5, $t4, $t3                   # Address for left half
+    sb $zero, 0($t5)                      # Store color
+
+    move $a0, $s3                 # Row of right half
+    move $a1, $s7                 # New column of right half
+    jal check_collision            # Check collision
+    bnez $v0, skip_move_capsule            # Collision detected; skip move
+    jal proceed_move
+
+check_pr:
+    # Check collision for new positions
+    move $a0, $s3                 # Row of right half
+    move $a1, $s7 
+    jal check_collision            # Check collision
+    bnez $v0, skip_move_capsule            # Collision detected; skip move
+    mul $t3, $s3, 8                     
+    add $t3, $t3, $s4                   
+    # Load base address of JAR_GRID
+    la $t4, JAR_GRID
+    add $t5, $t4, $t3                   # Address for left half
+    sb $zero, 0($t5)                      # Store color
+
+    move $a0, $s1                 # Row of left half
+    move $a1, $s6                 # New column of left half
+    jal check_collision            # Check collision
+    bnez $v0, skip_move_capsule            # Collision detected; skip move
+    jal proceed_move
+
+proceed_move:
+    # Remove capsule from current grid positions
+    jal remove_capsule_in_grid
+
+    # Update capsule's column positions
+    sw $s6, active_capsule_col_left      # New column of left half
+    sw $s7, active_capsule_col_right     # New column of right half
+
+    # Place capsule in new grid positions
+    jal place_capsule_in_grid
+    j end_move_capsule
+
+##############################################################################
+# Subroutine: move_down_proc
+##############################################################################
+move_down_proc:
+    addi $s6, $s1, 1              # New row for left half
+    addi $s7, $s3, 1              # New row for right half
+
+    # Check collision for new positions
+    move $a0, $s7                 # New row of right half
+    move $a1, $s4                 # Column of right half
+    jal check_collision            # Check collision
+    bnez $v0, fix_capsule_status
+    mul $t3, $s3, 8                     
+    add $t3, $t3, $s4                  
+    # Load base address of JAR_GRID
+    la $t4, JAR_GRID
+    add $t5, $t4, $t3                   # Address for left half
+    sb $zero, 0($t5)                      # Store color
+    
+    move $a0, $s6                 # New row of left half
+    move $a1, $s2                 # Column of left half
+    jal check_collision            # Check collision
+    bnez $v0, fix_capsule_status
+    
+    jal proceed_move_down
+
+proceed_move_down:
+    # Remove capsule from current grid positions
+    jal remove_capsule_in_grid
+
+    # Update capsule's row positions
+    sw $s6, active_capsule_row_left      # New row of left half
+    sw $s7, active_capsule_row_right     # New row of right half
+
+    # Place capsule in new grid positions
+    jal place_capsule_in_grid
+
+    j end_move_capsule
+
+##############################################################################
+# Subroutine: skip_move_capsule
+##############################################################################
+skip_move_capsule:
+    sw $s1, active_capsule_row_left     # Row of left half
+    sw $s2, active_capsule_col_left     # Column of left half
+    sw $s3, active_capsule_row_right    # Row of right half
+    sw $s4, active_capsule_col_right    # Column of right half
+    sw $s5, active_capsule_orientation  # Orientation
+    jal place_capsule_in_grid
+    j end_move_capsule
+
+##############################################################################
+# Subroutine: end_move_capsule
+##############################################################################
+end_move_capsule:
+    lw $s0, 4($sp)              # Save $s0
+    lw $s1, 8($sp)              # Save $s1
+    lw $s2, 12($sp)              # Save $s2
+    lw $s3, 16($sp)              # Save $s3
+    lw $s4, 20($sp)              # Save $s4
+    lw $ra, 0($sp)                       # Restore return address
+    addi $sp, $sp, 24                    # Deallocate stack space
+    jr $ra                               # Return to caller
+
+##############################################################################
+# Function: fix_capsule_status
+# Fixes the capsule in place, checks for line clears, and spawns a new capsule
+##############################################################################
+fix_capsule_status:
+    sw $s1, active_capsule_row_left     # Row of left half
+    sw $s2, active_capsule_col_left     # Column of left half
+    sw $s3, active_capsule_row_right    # Row of right half
+    sw $s4, active_capsule_col_right    # Column of right half
+    sw $s5, active_capsule_orientation  # Orientation
     jal place_capsule_in_grid
     
-    lw $ra, 4($sp)
-    addi $sp, $sp, 8          # Return to caller
-    jr $ra
+    # Check and clear completed lines
+    # jal clear_lines
+    
+    # Spawn a new capsule
+    jal place_capsule
+    j end_move_capsule                   # Return to caller
