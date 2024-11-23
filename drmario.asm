@@ -574,6 +574,12 @@ SPRITE_PAUSE_ADDRESS:
     .word 0x10027a58, 0x10027a58, 0x10027a58, 0x10027a58, 0x10027a58, 0x10027a58, 0x10027a58, 0x10027a58
 SPRITE_OR:                  .word 0:1128
 
+# MUSIC
+pitches: .word 60, 62, 64, 65,-1  # C, D, E, F
+durations: .word 16, 16, 16, 16, -1  # ÿ������500����
+instruments: .word 1, 1, 1, 1, -1  # ʹ��ͬһ������
+volumes: .word 100, 100, 100, 100, -1  # ����
+
 # JAR MAP
 JAR_LOCATION:
     .word 0x1001c180, 0x1001c1a0, 0x1001c1c0, 0x1001c1e0, 0x1001c200, 0x1001c220, 0x1001c240, 0x1001c260
@@ -647,6 +653,7 @@ main:
     jal draw_capsule
     li $t0, 0
     
+    
     j game_loop  
 
 Exit:
@@ -660,7 +667,7 @@ game_loop:
     lw $t7, game_over_flag
     bnez $t7, game_over
     lw $t8, paused_flag
-    bnez $t8, pause_handler
+    bnez $t8, pause_handler	
 
     jal handle_input
     
@@ -675,7 +682,6 @@ game_over:
     syscall
 
     j Exit
- 
 ##############################################################################
 # Function: handle_input
 # Handles player input for capsule movement and quitting the game
@@ -686,10 +692,6 @@ handle_input:
 
     lw $t0, paused_flag
     bnez $t0, handle_pause_only
-
-    addi $v0, $zero, 32
-    addi $a0, $zero, 16
-    syscall
     
     lw $t0, ADDR_KBRD      
     lb $t1, 0($t0)         
@@ -700,11 +702,11 @@ handle_input:
     beq $t2, 0x61, move_left    # a
     beq $t2, 0x64, move_right   # d
     beq $t2, 0x73, move_down    # s
+    beq $t2, 0x77, rotate_right # w
     beq $t2, 0x70, toggle_pause # p
     j clear_key
 
 handle_pause_only:
-    # 暂停时只�???�??? p �???
     lw $t0, ADDR_KBRD
     lb $t1, 0($t0)
     beqz $t1, no_input
@@ -715,7 +717,7 @@ handle_pause_only:
 
 toggle_pause:
     lw $t0, paused_flag
-    xori $t0, $t0, 1        # 切换暂停状�??(0->1 �??? 1->0)
+    xori $t0, $t0, 1        
     sw $t0, paused_flag
     j clear_key
 
@@ -744,10 +746,10 @@ move_down:
     jal move_capsule
     j clear_key
 
-#rotate_right:
-#    li $a0, 8
-#    jal move_capsule
-#    j clear_key
+rotate_right:
+    li $a0, 8
+    jal move_capsule
+    j clear_key
 
 clear_key:
     # Clear the key pressed to avoid repeated inputs
@@ -1233,13 +1235,16 @@ cell_occupied:
 # Attempts to move the active capsule
 ##############################################################################
 move_capsule:
-    addi $sp, $sp, -24
+    addi $sp, $sp, -36
     sw $ra, 0($sp)
     sw $s0, 4($sp)              # Save $s0
     sw $s1, 8($sp)              # Save $s1
     sw $s2, 12($sp)              # Save $s2
     sw $s3, 16($sp)              # Save $s3
     sw $s4, 20($sp)              # Save $s4
+    sw $s5, 24($sp)
+    sw $s6, 28($sp)
+    sw $s7, 32($sp)
 
     move $s0, $a0               # Movement Direction Identifier
 
@@ -1253,7 +1258,7 @@ move_capsule:
     beq $s0, 4, move_lr_proc           
     beq $s0, 6, move_lr_proc          
     beq $s0, 2, move_down_proc           # MOVE_DOWN
-    # beq $s0, 8, rotate_proc              # ROTATE
+    beq $s0, 8, rotate_proc              # ROTATE
     j end_move_capsule                    # Invalid movement
 
 ##############################################################################
@@ -1381,6 +1386,100 @@ proceed_move_down:
     jal place_capsule_in_grid
 
     j end_move_capsule
+    
+##############################################################################
+# Subroutine: rotate_proc
+##############################################################################
+rotate_proc:
+    beq $s5, 1, rotate_v
+    beqz $s5, rotate_h
+    j end_move_capsule
+
+rotate_h:
+    addi $s6, $s3, 1
+    addi $s7, $s4, -1
+
+    move $a0, $s6                 # New row of left half
+    move $a1, $s7                 # Column of left half
+    jal check_collision            # Check collision
+    bnez $v0, skip_move_capsule
+    
+    # Remove capsule from current grid positions
+    jal remove_capsule_in_grid
+
+    # clear old position piexls
+    mul $t1, $s1, 8
+    add $t1, $s2, $t1
+    add $a0, $zero, $t1
+    jal draw_viruses
+    mul $t1, $s3, 8
+    add $t1, $s4, $t1
+    add $a0, $zero, $t1
+    jal draw_viruses
+
+    # Update capsule's column positions
+    sw $s6, active_capsule_row_right      # New column of left half
+    sw $s7, active_capsule_col_right     # New column of right half
+
+    lw $s6, active_capsule_orientation
+    addi $s6, $zero, 1
+    sw $s6, active_capsule_orientation
+
+    # Place capsule in new grid positions
+    jal place_capsule_in_grid
+    j end_move_capsule
+
+rotate_v:
+    addi $s6, $s2, 1             # left col
+    addi $s7, $s3, -1           # rigth row
+
+    move $a0, $s1                 
+    move $a1, $s6                 
+    jal check_collision            
+    bnez $v0, skip_move_capsule
+    mul $t3, $s1, 8                     
+    add $t3, $t3, $s2                   
+    # Load base address of JAR_GRID
+    la $t4, JAR_GRID
+    add $t5, $t4, $t3                   # Address for left half
+    sb $zero, 0($t5)                      # Store color
+
+    move $a0, $s7                 # New row of left half
+    move $a1, $s4                 # Column of left half
+    jal check_collision            # Check collision
+    bnez $v0, skip_move_capsule
+
+    # Remove capsule from current grid positions
+    jal remove_capsule_in_grid
+
+    # clear old position piexls
+    mul $t1, $s1, 8
+    add $t1, $s2, $t1
+    add $a0, $zero, $t1
+    jal draw_viruses
+    mul $t1, $s3, 8
+    add $t1, $s4, $t1
+    add $a0, $zero, $t1
+    jal draw_viruses
+
+    # Update capsule's column positions
+    sw $s7, active_capsule_row_left     # Row of left half
+    sw $s4, active_capsule_col_left      # New column of left half
+    sw $s1, active_capsule_row_right     # New row of right half
+    sw $s6, active_capsule_col_right    # Column of right half
+
+    lw $s6, active_capsule_orientation
+    add $s6, $zero, $zero
+    sw $s6, active_capsule_orientation
+
+    lw $s6, capsule_color_left
+    lw $s7, capsule_color_right
+    sw $s7, capsule_color_left
+    sw $s6, capsule_color_right
+
+    # Place capsule in new grid positions
+    jal place_capsule_in_grid
+    j end_move_capsule
 
 ##############################################################################
 # Subroutine: skip_move_capsule
@@ -1403,8 +1502,11 @@ end_move_capsule:
     lw $s2, 12($sp)              # Save $s2
     lw $s3, 16($sp)              # Save $s3
     lw $s4, 20($sp)              # Save $s4
+    lw $s5, 24($sp)
+    lw $s6, 28($sp)
+    lw $s7, 32($sp)
     lw $ra, 0($sp)                       # Restore return address
-    addi $sp, $sp, 24                    # Deallocate stack space
+    addi $sp, $sp, 36                    # Deallocate stack space
     jr $ra                               # Return to caller
 
 ##############################################################################
@@ -1539,5 +1641,37 @@ draw_or_screen_end:
     addi $sp, $sp, 32
     jr $ra  
 
+##############################################################################
+# Function: clear_line
+##############################################################################
+clear_line:
+    addi $sp, $sp, -36
+    sw $ra, 0($sp)
+    sw $s0, 4($sp)              # Save $s0
+    sw $s1, 8($sp)              # Save $s1
+    sw $s2, 12($sp)              # Save $s2
+    sw $s3, 16($sp)              # Save $s3
+    sw $s4, 20($sp)              # Save $s4
+    sw $s5, 24($sp)
+    sw $s6, 28($sp)
+    sw $s7, 32($sp)
 
-#TODO  -do rotate capusle, -clear line, - music at when game done, and bgm whole time, gravity, gravity increase, end screen, Draw Dr. Mario and the viruses on the side panels, mplement additional shapes and colours for the capsules.
+end_clear_line:
+    lw $s0, 4($sp)              # Save $s0
+    lw $s1, 8($sp)              # Save $s1
+    lw $s2, 12($sp)              # Save $s2
+    lw $s3, 16($sp)              # Save $s3
+    lw $s4, 20($sp)              # Save $s4
+    lw $s5, 24($sp)
+    lw $s6, 28($sp)
+    lw $s7, 32($sp)
+    lw $ra, 0($sp)                       # Restore return address
+    addi $sp, $sp, 36                    # Deallocate stack space
+    jr $ra 
+
+##############################################################################
+# Function: play_bgm
+##############################################################################
+# play_bgm:
+    
+#TODO  -clear line, - music at when game done, -bgm whole time, gravity, -gravity increase, -end screen, -Draw Dr. Mario and the viruses on the side panels, -mplement additional shapes and colours for the capsules.
