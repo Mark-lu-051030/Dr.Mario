@@ -1287,11 +1287,26 @@ SPRITE_NS:
 .align 2
 pause_p: .word 76, 80, 76, 80, -1  
 .align 2
-pause_d: .word 125, 125, 125, 125, -1
+pause_d: .word 100, 100, 100, 100, -1
 .align 2
 pause_i: .word 88, 88, 88, 88, -1
 .align 2
-pause_v: .word 100, 100, 100, 100, -1
+pause_v: .word 127, 127, 127, 127, -1
+
+cancel_p: .word 72, 76 ,79 ,76 ,72 , -1
+cancel_d: .word 30,30, 30, 30,30, -1
+cancel_i: .word 88, 88, 88, 88,88, -1
+cancel_v: .word 127, 127, 127, 127, 127, -1
+
+levelu_p: .word 70, 71 ,72, -1
+levelu_d: .word 300,300, 800, -1
+levelu_i: .word 88, 88 88,-1
+levelu_v: .word 127, 127, 127,-1
+
+gg_p: .word 89, 88 ,87, 84, -1
+gg_d: .word 30,30, 30, 50, -1
+gg_i: .word 88, 88 88,88, -1
+gg_v: .word 127, 127, 127, 127,-1
 
 # JAR MAP
 .align 2
@@ -1419,10 +1434,18 @@ game_over:
     li $a2, 60
     li $a3, 52
     jal draw_sprites
+    li $s6, 0
 
 game_over_loop:
     jal handle_input
-
+    bgt $s6, 7, skip_gos    
+    la $a0, gg_p
+    la $a1, gg_d
+    la $a2, gg_i
+    la $a3, gg_v
+    jal play_sound
+    addi $s6, $s6, 1
+skip_gos:
     jal DRAW_M3V
     jal DRAW_mg
 
@@ -1493,11 +1516,6 @@ toggle_pause:
     lw $t0, paused_flag
     xori $t0, $t0, 1        
     sw $t0, paused_flag
-    
-    la $a0, pause_p
-    la $a1, pause_i
-    la $a2, pause_d
-    la $a3, pause_v
     j clear_key
 
 no_input:
@@ -2122,6 +2140,13 @@ proceed_move:
     add $a0, $zero, $t1
     jal draw_viruses
 
+    li $a0, 85
+    li $a1, 30
+    li $a2, 88
+    li $a3, 127
+    li $v0, 31
+    syscall
+
     # Update capsule's column positions
     sw $s6, active_capsule_col_left      # New column of left half
     sw $s7, active_capsule_col_right     # New column of right half
@@ -2169,6 +2194,13 @@ proceed_move_down:
     add $t1, $s4, $t1
     add $a0, $zero, $t1
     jal draw_viruses
+
+    li $a0, 85
+    li $a1, 30
+    li $a2, 88
+    li $a3, 127
+    li $v0, 31
+    syscall
 
     # Update capsule's row positions
     sw $s6, active_capsule_row_left      # New row of left half
@@ -2315,7 +2347,7 @@ fix_capsule_status:
     
     # Check and clear completed lines
     jal clear_line
-    beqz $v0, skip_clear
+    beqz $v1, skip_clear
     
     li $v0, 32                      # Sleep syscall
     li $a0, 160                 
@@ -2332,20 +2364,26 @@ skip_clear:
 ##############################################################################
 pause_handler:
         # Display the pause screen
-        jal draw_pause_screen
+    jal draw_pause_screen
+    
+    la $a0, pause_p
+    la $a1, pause_d
+    la $a2, pause_i
+    la $a3, pause_v
+    jal play_sound
         
-    wait_resume:
-        # Wait until the player resumes the game by pressing 'p'
-        jal handle_input              # Handle input to check for 'p' again
+wait_resume:
+    # Wait until the player resumes the game by pressing 'p'
+    jal handle_input              # Handle input to check for 'p' again
         
-        # Check if the game is still paused
-        lw $t0, paused_flag
-        bnez $t0, wait_resume        # If still paused, continue waiting
+     # Check if the game is still paused
+     lw $t0, paused_flag
+     bnez $t0, wait_resume        # If still paused, continue waiting
         
-        # Remove the pause screen
-        jal remove_pause_screen
+     # Remove the pause screen
+     jal remove_pause_screen
         
-        j game_loop
+     j game_loop
 
 ##############################################################################
 # Function: draw_pause_screen
@@ -3039,19 +3077,22 @@ grid_loop:
     addi $s2, $s2, 1
     j proceed_clean
 check_clean:
-    addi $v0, $v0, 1
+    li $v1, 1
     beq $t3, 5, draw_YC
     beq $t3, 6, draw_BC
     beq $t3, 7, draw_RC
     j proceed_clean
 
 draw_YC:
+    li $v0,1	
     la $a1, SPRITE_YC 
     j draw_c
 draw_BC:
+    li $v0,1
     la $a1, SPRITE_BC
     j draw_c
 draw_RC:
+    li $v0,1
     la $a1, SPRITE_RC
 
 draw_c:
@@ -3072,6 +3113,13 @@ proceed_clean:
     j grid_loop
 
 end_clear_line:
+    beqz $v0, skip_cs
+    la $a0, cancel_p
+    la $a1, cancel_d
+    la $a2, cancel_i
+    la $a3, cancel_v
+    jal play_sound
+skip_cs:
     sw $s2, viruses_counter
     lw $ra, 0($sp)
     lw $s0, 4($sp)             
@@ -3123,7 +3171,7 @@ draw_ca_loop:
     beq $t3, 9, clear_a
     j proceed_ca
     
-clear_a:
+clear_a:   	
     li $v0, 1
     lw $a0, 0($s1)
     li $a2, 8
@@ -3332,6 +3380,13 @@ level_update:
     lw $s2, gravity_speed
     
     bnez $s0, end_level_update
+    
+    la $a0, levelu_p
+    la $a1, levelu_d
+    la $a2, levelu_i
+    la $a3, levelu_v
+    jal play_sound
+    
     li $a0, 0x1001E188
     la $a1, SPRITE_NS
     li $a2, 60
@@ -3339,7 +3394,7 @@ level_update:
     jal draw_sprites
 
     li $v0, 32
-    li $a0, 1600
+    li $a0, 3000
     syscall
 
     beq $s1, 20, special_ending
@@ -3413,11 +3468,11 @@ play_s_loop:
     lw $t0, 0($s0)            # Load current pitch
     beq $t0, -1, play_s_loop_end  # If pitch == -1, exit the loop    
     
-    li $v0, 31
     lw $a0, 0($s0)
     lw $a1, 0($s1)
     lw $a2, 0($s2)
     lw $a3, 0($s3)
+    li $v0, 33
     syscall
    
     addi $s0, $s0, 4
@@ -3427,7 +3482,7 @@ play_s_loop:
     
     j play_s_loop
 
-play_s_loop_end:    
+play_s_loop_end:
     lw $s0, 0($sp)
     lw $s1, 4($sp)
     lw $s2, 8($sp)
