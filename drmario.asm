@@ -2722,7 +2722,7 @@ reset_field:
 # Function: clear_line
 ##############################################################################
 clear_line:
-    addi $sp, $sp, -56
+    addi $sp, $sp, -60
     sw $ra, 0($sp)
     sw $s0, 4($sp)            
     sw $t0, 8($sp)              
@@ -2737,6 +2737,7 @@ clear_line:
     sw $t9, 44($sp)
     sw $s1, 48($sp)
     sw $s2, 52($sp)
+    sw $s3, 56($sp)
     
     # Initialize loop variables
     li $t0, 0                  # Row index
@@ -2778,16 +2779,24 @@ horizontal_loop:
     jal abs
     move $t4, $v0
     
-    bge $t4, 4, continue_horizontal
-    bge $t5, 4, continue_horizontal
-    bge $t6, 4, continue_horizontal
-    bge $t7, 4, continue_horizontal
-    
     beq $t4, 0, continue_horizontal
     beq $t5, 0, continue_horizontal
     beq $t6, 0, continue_horizontal
     beq $t7, 0, continue_horizontal
-
+    
+    blt $t4, 4, check_5_h
+    addi $t4, $t4, -4
+check_5_h:
+    blt $t5, 4, check_6_h
+    addi $t5, $t5, -4
+check_6_h:
+    blt $t6, 4, check_7_h
+    addi $t6, $t6, -4
+check_7_h:
+    blt $t7, 4, check_h
+    addi $t7, $t7, -4
+    
+check_h:
     # If all are the same and not empty, mark them
     beq $t4, $t5, check_2
     j continue_horizontal
@@ -2852,16 +2861,24 @@ vertical_inner_loop:
     jal abs
     move $t4, $v0
     
-    bge $t4, 4, continue_vertical
-    bge $t5, 4, continue_vertical
-    bge $t6, 4, continue_vertical
-    bge $t7, 4, continue_vertical
-    
     beq $t4, 0, continue_vertical
     beq $t5, 0, continue_vertical
     beq $t6, 0, continue_vertical
     beq $t7, 0, continue_vertical
-
+    
+    blt $t4, 4, check_5_v
+    addi $t4, $t4, -4
+check_5_v:
+    blt $t5, 4, check_6_v
+    addi $t5, $t5, -4
+check_6_v:
+    blt $t6, 4, check_7_v
+    addi $t6, $t6, -4
+check_7_v:
+    blt $t7, 4, check_v
+    addi $t7, $t7, -4
+    
+check_v:
     # If all are the same and not empty, mark them
     beq $t4, $t5, check_v2
     j continue_vertical
@@ -2893,8 +2910,9 @@ clean_start:
     la $s1, JAR_LOCATION
     li $s2, 0
     li $t3, 0
+    li $s3, 0
 grid_loop:
-    bge $t0, 128, end_clear_line
+    bge $s3, 128, end_clear_line
     lb $t3, 0($s0)
     beqz $t3, proceed_clean
     bgtz $t3, check_clean 
@@ -2926,7 +2944,7 @@ draw_c:
     sb $t9, 0($s0)
 
 proceed_clean:
-    addi $t0, $t0, 1
+    addi $s3, $s3, 1
     addi $s0, $s0, 1
     addi $s1, $s1, 4
     j grid_loop
@@ -2946,8 +2964,9 @@ end_clear_line:
     lw $t8, 40($sp)
     lw $t9, 44($sp)
     lw $s1, 48($sp)
-    lw $s2, 52($sp)              
-    addi $sp, $sp, 56
+    lw $s2, 52($sp) 
+    lw $s3, 56($sp)        
+    addi $sp, $sp, 60
     jr $ra 
 
 ##############################################################################
