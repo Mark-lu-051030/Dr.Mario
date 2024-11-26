@@ -1275,11 +1275,13 @@ score:                       .word 0   # Initialize to 0
 
 # Gravity counter
 gravity_counter:             .word 0   # Counter for gravity timing
+gravity_speed:	            .word 60
 viruses_counter:             .word 0   # Counter for viruses
 frame_counter:               .word 0
 frame_delay:                 .word 0
 frame_counter1:               .word 0
 frame_delay1:                 .word 0
+level_counter:	             .word 0
 ##############################################################################
 # Code
 ##############################################################################
@@ -1318,13 +1320,15 @@ game_loop:
     lw $t7, game_over_flag
     bnez $t7, game_over
     lw $t8, paused_flag
-    bnez $t8, pause_handler	
+    bnez $t8, pause_handler
+    
+    jal level_update	
 
     jal handle_input
     
     jal draw_capsule
 
-    addi $a2, $zero, 60
+    lw $a2, gravity_speed
     jal gravity
     
     jal DRAW_M3V_N
@@ -3146,6 +3150,8 @@ unsupported_capsule_loop:
     li $a3, 8                   # Height
     jal draw_sprites            # Draw black box
 
+    addi $s0, $s0, 1
+
     # Move the pill down by 1 row
     sb $zero, 0($t3)            # Clear original position
     addi $t1, $t1, 8            # Move to the cell below
@@ -3238,6 +3244,76 @@ abs:
     jr $ra 
 
 ##############################################################################
+# Function: level_update
+##############################################################################
+level_update:
+    addi $sp, $sp, -36
+    sw $ra, 0($sp)
+    sw $s0, 4($sp)            
+    sw $s1, 8($sp)
+    sw $s2, 12($sp)
+    sw $t9, 16($sp)
+    sw $s3, 20($sp)
+    sw $s4, 24($sp)
+    sw $s5, 28($sp)
+    sw $s6, 32($sp)
+    
+    lw $s0, viruses_counter
+    lw $s1, level_counter
+    lw $s2, gravity_speed
+    
+    bnez $s0, end_level_update
+    beq $s1, 20, special_ending
+    
+    addi $s1, $s1, 1
+    sw $s1, level_counter
+    
+    addi $s2, $s2, -3
+    sw $s2, gravity_speed
+    
+    la $s4, JAR_GRID
+    add $s5, $zero, $zero
+reset_jar_level:
+    sb $zero, 0($s4)
+    addi $s4, $s4, 1
+    addi $s5, $s5, 1
+    blt $s5, 128, reset_jar_level
+    
+    la $s6, JAR_LOCATION
+    add $s5, $zero, $zero
+reset_jar_FIELD:
+    lw $a0, 0($s6)
+    la $a1, BLACK
+    li $a2, 8
+    li $a3, 8
+    jal draw_sprites
+    addi $s6, $s6, 4
+    addi $s5, $s5, 1
+    blt $s5, 128, reset_jar_FIELD    
+    
+    mul $t9, $s1, 4
+    jal place_viruses
+    j end_level_update
+
+special_ending:
+    lw $s3, game_over_flag
+    addi $s3, $zero, 1
+    sw $s3, game_over_flag
+
+end_level_update:         
+    lw $ra, 0($sp)
+    lw $s0, 4($sp)            
+    lw $s1, 8($sp)
+    lw $s2, 12($sp)
+    lw $t9, 16($sp)
+    lw $s3, 20($sp)
+    lw $s4, 24($sp)
+    lw $s5, 28($sp)
+    lw $s6, 32($sp)                           
+    addi $sp, $sp, 36
+    jr $ra 
+
+##############################################################################
 # Function: play_sound
 ##############################################################################
 play_sound:
@@ -3281,6 +3357,3 @@ play_s_loop_end:
     lw $t0, 20($sp)
     addi $sp, $sp, 24
     jr $ra    
-
-
-#TODO  -clear line, -gravity increase,  -sound effect, -bgm whole time
