@@ -1186,6 +1186,34 @@ SPRITE_RC:
     .word 0xD84060, 0x000001, 0x000001, 0x000001, 0x000001, 0x000001, 0xD84060, 0x000001
     .word 0x000001, 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0x000001, 0x000001
     .word 0x000001, 0x000001, 0x000001, 0x000001, 0x000001, 0x000001, 0x000001, 0x000001
+SPRITE_YSP:
+    .word 0x000001, 0xE8D020, 0xE8D020, 0xE8D020, 0xE8D020, 0xE8D020, 0x000001, 0x000001
+    .word 0xE8D020, 0xE8D020, 0x60A0FF, 0xE8D020, 0xE8D020, 0xE8D020, 0xE8D020, 0x000001
+    .word 0xE8D020, 0x60A0FF, 0xE8D020, 0xE8D020, 0xE8D020, 0xE8D020, 0xE8D020, 0x000001
+    .word 0xE8D020, 0x60A0FF, 0xE8D020, 0xE8D020, 0xE8D020, 0xE8D020, 0xE8D020, 0x000001
+    .word 0xE8D020, 0x60A0FF, 0xE8D020, 0xE8D020, 0xE8D020, 0xE8D020, 0xE8D020, 0x000001
+    .word 0xE8D020, 0xE8D020, 0xE8D020, 0xE8D020, 0xE8D020, 0xE8D020, 0xE8D020, 0x000001
+    .word 0x000001, 0xE8D020, 0xE8D020, 0xE8D020, 0xE8D020, 0xE8D020, 0x000001, 0x000001
+    .word 0x000001, 0x000001, 0x000001, 0x000001, 0x000001, 0x000001, 0x000001, 0x000001
+SPRITE_BSP:
+    .word 0x000001, 0x60A0FF, 0x60A0FF, 0x60A0FF, 0x60A0FF, 0x60A0FF, 0x000001, 0x000001
+    .word 0x60A0FF, 0x60A0FF, 0xE8D020, 0x60A0FF, 0x60A0FF, 0x60A0FF, 0x60A0FF, 0x000001
+    .word 0x60A0FF, 0xE8D020, 0x60A0FF, 0x60A0FF, 0x60A0FF, 0x60A0FF, 0x60A0FF, 0x000001
+    .word 0x60A0FF, 0xE8D020, 0x60A0FF, 0x60A0FF, 0x60A0FF, 0x60A0FF, 0x60A0FF, 0x000001
+    .word 0x60A0FF, 0xE8D020, 0x60A0FF, 0x60A0FF, 0x60A0FF, 0x60A0FF, 0x60A0FF, 0x000001
+    .word 0x60A0FF, 0x60A0FF, 0x60A0FF, 0x60A0FF, 0x60A0FF, 0x60A0FF, 0x60A0FF, 0x000001
+    .word 0x000001, 0x60A0FF, 0x60A0FF, 0x60A0FF, 0x60A0FF, 0x60A0FF, 0x000001, 0x000001
+    .word 0x000001, 0x000001, 0x000001, 0x000001, 0x000001, 0x000001, 0x000001, 0x000001
+SPRITE_RSP:
+    .word 0x000001, 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0x000001, 0x000001
+    .word 0xD84060, 0xD84060, 0xE8D020, 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0x000001
+    .word 0xD84060, 0xE8D020, 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0x000001
+    .word 0xD84060, 0xE8D020, 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0x000001
+    .word 0xD84060, 0xE8D020, 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0x000001
+    .word 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0x000001
+    .word 0x000001, 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0xD84060, 0x000001, 0x000001
+    .word 0x000001, 0x000001, 0x000001, 0x000001, 0x000001, 0x000001, 0x000001, 0x000001
+
 # MUSIC
 .align 2
 pause_p: .word 76, 80, 76, 80, -1  
@@ -1868,9 +1896,12 @@ draw_end_capsule:
 ##############################################################################
 check_collision:
     # Save callee-saved registers if necessary
-    addi $sp, $sp, -8
+    addi $sp, $sp, -20
     sw $s0, 0($sp)
     sw $s1, 4($sp)
+    sw $t6, 8($sp)
+    sw $t7, 12($sp)
+    sw $t8, 16($sp)
 
     move $s0, $a0      # Row
     move $s1, $a1      # Column
@@ -1898,7 +1929,10 @@ check_collision:
     # Restore registers and return
     lw $s0, 0($sp)
     lw $s1, 4($sp)
-    addi $sp, $sp, 8
+    lw $t6, 8($sp)
+    lw $t7, 12($sp)
+    lw $t8, 16($sp)
+    addi $sp, $sp, 20
     jr $ra
 
 cell_occupied:
@@ -2202,6 +2236,8 @@ fix_capsule_status:
     
     # Check and clear completed lines
     jal clear_line
+    
+    jal check_usc
     
     # Spawn a new capsule
     jal place_capsule
@@ -2940,7 +2976,7 @@ draw_c:
     li $a3, 8
     jal draw_sprites
     
-    li $t9, 0
+    li $t9, 9
     sb $t9, 0($s0)
 
 proceed_clean:
@@ -2969,6 +3005,106 @@ end_clear_line:
     addi $sp, $sp, 60
     jr $ra 
 
+##############################################################################
+# Function: check_usc
+##############################################################################
+check_usc:
+    addi $sp, $sp, -60
+    sw $ra, 4($sp)
+    sw $s0, 0($sp)            
+    sw $t0, 8($sp)              
+    sw $t1, 12($sp)              
+    sw $t2, 16($sp)
+    sw $t3, 20($sp)
+    sw $t4, 24($sp)
+    sw $t5, 28($sp)
+    sw $t6, 32($sp)
+    sw $s6, 36($sp)
+    sw $s5, 40($sp)
+    sw $s4, 44($sp)
+    sw $s1, 48($sp)
+    sw $s2, 52($sp)
+    sw $s3, 56($sp)
+
+    la $s0, JAR_GRID
+    addi $s0, $s0, 119
+    la $s1, JAR_LOCATION
+    addi $s1, $s1, 476
+    li $t3, 0
+    li $s3, 120
+
+draw_bkc_loop:
+    blt $s3, 0, end_clear_usc
+    lb $t3, 0($s0)
+    beqz $t3, proceed_clean_usc
+    beq $t3, 9, clear_pd
+    j check_usc_d
+    
+clear_pd:
+    lw $a0, 0($s1)
+    li $a2, 8
+    li $a3, 8
+    la $a1, BLACK
+    jal draw_sprites
+    sw $zero, 0($s0)
+
+check_usc_d:
+    addi $s4, $s0, 8
+    addi $s6, $s1, 32
+check_usc_d_loop:
+    addi $s4, $s4, 8
+    li $t6, 8
+    div $s4, $t6
+    mflo $a0
+    mfhi $a1
+    jal check_collision
+    bnez $v0, proceed_clean_usc
+    lb $s5, 0($s4)
+
+    lw $a0, 0($s1)
+    li $a2, 8
+    li $a3, 8
+    la $a1, BLACK
+    jal draw_sprites
+    sw $zero, 0($s0)
+
+    sw $s5, 0($s4)
+    la $a1, SPRITE_YSP
+    beq $s5, 1, draw_sb
+    la $a1, SPRITE_BSP
+    beq $s5, 2, draw_sb
+    la $a1, SPRITE_RSP
+    addi $s6, $s6, 32
+    lw $a0, 0($s6)
+draw_sb:
+    jal draw_sprites
+
+    j check_usc_d_loop
+
+proceed_clean_usc:
+    addi $s3, $s3, -1
+    addi $s0, $s0, -1
+    addi $s1, $s1, -4
+    j draw_bkc_loop
+
+end_clear_usc:
+    lw $ra, 4($sp)
+    lw $s0, 0($sp)             
+    lw $t0, 8($sp)              
+    lw $t1, 12($sp)              
+    lw $t2, 16($sp)
+    lw $t3, 20($sp)
+    lw $t4, 24($sp)
+    lw $t5, 28($sp)
+    lw $t6, 32($sp)
+    lw $s6, 36($sp)
+    lw $s5, 40($sp)
+    lw $s4, 44($sp)
+    lw $s1, 48($sp)
+    lw $s2, 52($sp) 
+    lw $s3, 56($sp)        
+    addi $sp, $sp, 60
+    jr $ra 
 ##############################################################################
 # Function: abs
 ##############################################################################
