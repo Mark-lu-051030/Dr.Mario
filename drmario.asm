@@ -1425,7 +1425,6 @@ toggle_pause:
     la $a1, pause_i
     la $a2, pause_d
     la $a3, pause_v
-    jal play_sound
     j clear_key
 
 no_input:
@@ -1469,11 +1468,13 @@ clear_key:
 ##############################################################################
 draw_sprites:
     # Save callee-saved registers (if used)
-    addi $sp, $sp, -16        # Allocate space on the stack
+    addi $sp, $sp, -24        # Allocate space on the stack
     sw $s0, 0($sp)           # Save $s0
     sw $s1, 4($sp)            # Save $s1
     sw $s2, 8($sp)            # Save $s2
     sw $s3, 12($sp)           # Save $s3
+    sw $t0, 16($sp)
+    sw $t2, 20($sp)
 
     # Move parameters to temporary registers for use
     move $s0, $a0             # Base display address
@@ -1502,7 +1503,9 @@ draw_column:
     lw $s1, 4($sp)            # Restore $s1
     lw $s2, 8($sp)            # Restore $s2
     lw $s3, 12($sp)           # Restore $s3
-    addi $sp, $sp, 16         # Reset stack pointer
+    lw $t0, 16($sp)
+    lw $t2, 20($sp)
+    addi $sp, $sp, 24         # Reset stack pointer
 
     jr $ra                    # Return to caller
     
@@ -1569,9 +1572,9 @@ exit_place_viruses:
 ##############################################################################
 draw_viruses:
     addi $sp, $sp, -12
-    sw $s0, 0($sp)
+    sw $ra, 0($sp)
     sw $s1, 4($sp)
-    sw $ra, 8($sp)
+    sw $s0, 8($sp)
     
     move $s0, $a0
     # Load color from JAR_GRID
@@ -1609,9 +1612,9 @@ proceed_draw:
     jal draw_sprites
 
 exit_draw_viruses:
-    lw $s0, 0($sp)           # Restore $s0
+    lw $ra, 0($sp)           # Restore $s0
     lw $s1, 4($sp)           # Restore $s1
-    lw $ra, 8($sp)           # Restore $ra
+    lw $s0, 8($sp)           # Restore $ra
     addi $sp, $sp, 12        # Deallocate stack space
     jr $ra                   # Return to caller 
 
@@ -1940,7 +1943,10 @@ cell_occupied:
     # Restore registers and return
     lw $s0, 0($sp)
     lw $s1, 4($sp)
-    addi $sp, $sp, 8
+    lw $t6, 8($sp)
+    lw $t7, 12($sp)
+    lw $t8, 16($sp)
+    addi $sp, $sp, 20
     jr $ra
 
 ##############################################################################
@@ -2210,6 +2216,7 @@ skip_move_capsule:
 # Subroutine: end_move_capsule
 ##############################################################################
 end_move_capsule:
+    lw $ra, 0($sp)
     lw $s0, 4($sp)              # Save $s0
     lw $s1, 8($sp)              # Save $s1
     lw $s2, 12($sp)              # Save $s2
@@ -2217,8 +2224,7 @@ end_move_capsule:
     lw $s4, 20($sp)              # Save $s4
     lw $s5, 24($sp)
     lw $s6, 28($sp)
-    lw $s7, 32($sp)
-    lw $ra, 0($sp)                       # Restore return address
+    lw $s7, 32($sp)                
     addi $sp, $sp, 36                    # Deallocate stack space
     jr $ra                               # Return to caller
 
@@ -2236,9 +2242,14 @@ fix_capsule_status:
     
     # Check and clear completed lines
     jal clear_line
+    beqz $v0, skip_clear
     
-    jal check_usc
-    
+    li $v0, 32                      # Sleep syscall
+    li $a0, 160                 
+    syscall
+    jal draw_ca
+    jal check_usc  
+skip_clear:    
     # Spawn a new capsule
     jal place_capsule
     j end_move_capsule                   # Return to caller
@@ -2976,6 +2987,8 @@ draw_c:
     li $a3, 8
     jal draw_sprites
     
+    li $v0, 1
+    
     li $t9, 9
     sb $t9, 0($s0)
 
@@ -3006,12 +3019,12 @@ end_clear_line:
     jr $ra 
 
 ##############################################################################
-# Function: check_usc
+# Function: draw_ca
 ##############################################################################
-check_usc:
+draw_ca:
     addi $sp, $sp, -60
-    sw $ra, 4($sp)
-    sw $s0, 0($sp)            
+    sw $ra, 0($sp)
+    sw $s0, 4($sp)            
     sw $t0, 8($sp)              
     sw $t1, 12($sp)              
     sw $t2, 16($sp)
@@ -3027,69 +3040,34 @@ check_usc:
     sw $s3, 56($sp)
 
     la $s0, JAR_GRID
-    addi $s0, $s0, 119
     la $s1, JAR_LOCATION
-    addi $s1, $s1, 476
     li $t3, 0
-    li $s3, 120
+    li $s3, 0
 
-draw_bkc_loop:
-    blt $s3, 0, end_clear_usc
+draw_ca_loop:
+    bge $s3, 128, end_ca
     lb $t3, 0($s0)
-    beqz $t3, proceed_clean_usc
-    beq $t3, 9, clear_pd
-    j check_usc_d
+    beq $t3, 9, clear_a
+    j proceed_ca
     
-clear_pd:
+clear_a:
+    li $v0, 1
     lw $a0, 0($s1)
     li $a2, 8
     li $a3, 8
     la $a1, BLACK
     jal draw_sprites
-    sw $zero, 0($s0)
+    sb $zero, 0($s0)
 
-check_usc_d:
-    addi $s4, $s0, 8
-    addi $s6, $s1, 32
-check_usc_d_loop:
-    addi $s4, $s4, 8
-    li $t6, 8
-    div $s4, $t6
-    mflo $a0
-    mfhi $a1
-    jal check_collision
-    bnez $v0, proceed_clean_usc
-    lb $s5, 0($s4)
+proceed_ca:
+    addi $s3, $s3, 1
+    addi $s0, $s0, 1
+    addi $s1, $s1, 4
+    j draw_ca_loop
 
-    lw $a0, 0($s1)
-    li $a2, 8
-    li $a3, 8
-    la $a1, BLACK
-    jal draw_sprites
-    sw $zero, 0($s0)
-
-    sw $s5, 0($s4)
-    la $a1, SPRITE_YSP
-    beq $s5, 1, draw_sb
-    la $a1, SPRITE_BSP
-    beq $s5, 2, draw_sb
-    la $a1, SPRITE_RSP
-    addi $s6, $s6, 32
-    lw $a0, 0($s6)
-draw_sb:
-    jal draw_sprites
-
-    j check_usc_d_loop
-
-proceed_clean_usc:
-    addi $s3, $s3, -1
-    addi $s0, $s0, -1
-    addi $s1, $s1, -4
-    j draw_bkc_loop
-
-end_clear_usc:
-    lw $ra, 4($sp)
-    lw $s0, 0($sp)             
+end_ca:
+    lw $ra, 0($sp)
+    lw $s0, 4($sp)             
     lw $t0, 8($sp)              
     lw $t1, 12($sp)              
     lw $t2, 16($sp)
@@ -3105,6 +3083,140 @@ end_clear_usc:
     lw $s3, 56($sp)        
     addi $sp, $sp, 60
     jr $ra 
+
+##############################################################################
+# Function: check_usc
+##############################################################################
+check_usc:
+    addi $sp, $sp, -60          # Save stack space
+    sw $ra, 0($sp)              # Save return address
+    sw $s0, 4($sp)              # Save temporary registers
+    sw $t0, 8($sp)
+    sw $t1, 12($sp)
+    sw $t2, 16($sp)
+    sw $t3, 20($sp)
+    sw $t4, 24($sp)
+    sw $t5, 28($sp)
+    sw $t6, 32($sp)
+    sw $s6, 36($sp)
+    sw $s5, 40($sp)
+    sw $s4, 44($sp)
+    sw $s1, 48($sp)
+    sw $s2, 52($sp)
+    sw $s3, 56($sp)
+
+gravity_main_loop:
+    li $s0, 14                  # Start from the second-to-last row (row index 14)
+
+gravity_row_loop:
+    bltz $s0, gravity_done      # Exit if row < 0
+    li $s1, 0                   # Initialize column index to 0
+
+gravity_col_loop:
+    bge $s1, 8, next_gravity_row # Exit if column >= 8
+
+    # Calculate current cell index
+    mul $t0, $s0, 8             # $t0 = row index * 8
+    add $t1, $t0, $s1           # $t1 = index of the current cell
+    la $t2, JAR_GRID            # Load grid base address
+    add $t3, $t2, $t1           # $t3 = address of current cell
+    lb $t4, 0($t3)              # Load block value (pill or virus)
+
+    # Skip if not an unsupported capsule (pill: 1, 2, 3)
+    blt $t4, 1, continue_gravity_col
+    bgt $t4, 3, continue_gravity_col
+
+    # Loop to move the pill down until collision
+unsupported_capsule_loop:
+    # Check if the cell below is empty
+    addi $a0, $s0, 1            # $a0 = row below
+    add $a1, $zero, $s1         # $a1 = current column
+    jal check_collision         # Call check_collision
+    bnez $v0, unsupported_capsule_done # Exit loop if the cell below is occupied
+
+    # Erase current pill by drawing a black box
+    la $a1, BLACK               # Black sprite to erase
+    la $t5, JAR_LOCATION
+    mul $t6, $s0, 8             # Offset = row * 8
+    add $t6, $t6, $s1           # Offset += column
+    mul $t6, $t6, 4
+    add $t6, $t6, $t5
+    lw $a0, 0($t6)         
+    li $a2, 8                   # Width
+    li $a3, 8                   # Height
+    jal draw_sprites            # Draw black box
+
+    # Move the pill down by 1 row
+    sb $zero, 0($t3)            # Clear original position
+    addi $t1, $t1, 8            # Move to the cell below
+    add $t3, $t2, $t1           # Address of the new cell
+    sb $t4, 0($t3)              # Place pill in the new cell
+
+    # Draw pill at the new position
+    beq $t4, 1, draw_pill_1
+    beq $t4, 2, draw_pill_2
+    beq $t4, 3, draw_pill_3
+    j unsupported_capsule_loop
+    
+draw_pill_1:
+    la $a1, SPRITE_YSP
+    j draw_new_pill
+draw_pill_2:
+    la $a1, SPRITE_BSP
+    j draw_new_pill
+draw_pill_3:
+    la $a1, SPRITE_RSP
+    j draw_new_pill
+
+draw_new_pill:
+    la $t5, JAR_LOCATION
+    mul $t6, $s0, 8             # Offset = row * 8
+    add $t6, $t6, $s1           # Offset += column
+    mul $t6, $t6, 4
+    add $t6, $t6, $t5
+    lw $a0, 0($t6)         
+    li $a2, 8                   # Width
+    li $a3, 8                   # Height
+    jal draw_sprites            # Draw pill sprite
+
+    # Add delay for animation
+    li $v0, 32                  # Delay duration
+    li $a0, 16
+    syscall                     # Add delay for smooth animation
+
+    j unsupported_capsule_loop
+
+unsupported_capsule_done:
+    # Done moving this pill, continue to the next column
+    j continue_gravity_col
+
+continue_gravity_col:
+    addi $s1, $s1, 1            # Move to the next column
+    j gravity_col_loop
+
+next_gravity_row:
+    addi $s0, $s0, -1           # Move to the previous row
+    j gravity_row_loop
+
+gravity_done:
+    lw $ra, 0($sp)
+    lw $s0, 4($sp)             
+    lw $t0, 8($sp)              
+    lw $t1, 12($sp)              
+    lw $t2, 16($sp)
+    lw $t3, 20($sp)
+    lw $t4, 24($sp)
+    lw $t5, 28($sp)
+    lw $t6, 32($sp)
+    lw $s6, 36($sp)
+    lw $s5, 40($sp)
+    lw $s4, 44($sp)
+    lw $s1, 48($sp)
+    lw $s2, 52($sp) 
+    lw $s3, 56($sp)        
+    addi $sp, $sp, 60
+    jr $ra  
+
 ##############################################################################
 # Function: abs
 ##############################################################################
@@ -3118,9 +3230,9 @@ abs:
     sra $t1, $t0, 31
     xor $v0, $t0, $t1
     sub $v0, $v0, $t1
-
-    lw $ra, 0($sp)             
-    lw $t0, 4($sp)              
+           
+    lw $ra, 0($sp)
+    lw $t0, 4($sp)            
     lw $t1, 8($sp)                           
     addi $sp, $sp, 12
     jr $ra 
